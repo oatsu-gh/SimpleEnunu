@@ -1,4 +1,4 @@
-# Simple ENUNU
+# SimpleEnunu
 
 メンテしやすく、最新のNNSVSが使いやすいようにしたENUNUです。
 
