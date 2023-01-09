@@ -1,0 +1,6 @@
+omegaconf
+pyyaml
+torch>=1.7.1
+tqdm
+utaupy>=1.18.0
+nnsvs
