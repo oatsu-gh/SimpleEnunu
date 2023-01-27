@@ -48,7 +48,7 @@ except ModuleNotFoundError:
     print('PC環境に合わせてPyTorchを自動インストールします。')
     print('インストール完了までしばらくお待ちください。')
     print('----------------------------------------------------------')
-    enulib.install_torch.pip_install_torch(sys.executable)
+    enulib.install_torch.ltt_install_torch(sys.executable)
     print('----------------------------------------------------------')
     print('インストール成功しました。')
     print('----------------------------------------------------------\n')
@@ -225,7 +225,6 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
 
 
 if __name__ == '__main__':
-    print('_____ SimpleEnunu v0.0.1 ________')
     logging.debug(f'sys.argv: {sys.argv}')
     if len(sys.argv) == 3:
         main(sys.argv[1], sys.argv[2])

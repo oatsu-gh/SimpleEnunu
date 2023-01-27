@@ -7,12 +7,13 @@ ENUNUのリリース準備をする
 import shutil
 import subprocess
 from glob import glob
-from os import makedirs
+from os import chdir, makedirs
 from os.path import basename, dirname, exists, isdir, join, splitext
 from shutil import make_archive
 from typing import List
 
-KEEP_LATEST_PACKAGES = ['pip', 'setuptools', 'wheel', 'utaupy']
+KEEP_LATEST_PACKAGES = ['pip', 'setuptools',
+                        'wheel', 'utaupy', 'light-the-torch']
 REMOVE_LIST = ['__pycache__', '.mypy']
 PYTHON_DIR = 'python-3.9.13-embed-amd64'
 
@@ -47,11 +48,13 @@ def copy_python_dir(python_dir, enunu_release_dir):
     shutil.copytree(python_dir, join(enunu_release_dir, python_dir))
 
 
-def create_enunu_bat(path_out: str, python_exe: str):
+def create_enunu_bat(path_out: str, python_exe: str, version: str):
     """
     プラグインの各フォルダに simple_enunu.bat を作成する。
     """
-    s = f'@echo off\n\n{python_exe} simple_enunu.py %*\n\nPAUSE\n'
+    s = f'@echo off\n\n' +\
+        f'echo _____ SimpleEnunu v{version} ________\n' +\
+        f'{python_exe} simple_enunu.py %*\n\nPAUSE\n'
     with open(path_out, 'w', encoding='cp932') as f:
         f.write(s)
 
@@ -149,10 +152,10 @@ def main():
 
     # enunu.bat をリリースフォルダに作成
     print('Creating enunu.bat')
-    create_enunu_bat(join(enunu_release_dir, 'simple_enunu.bat'),  python_exe)
+    create_enunu_bat(
+        join(enunu_release_dir, 'simple_enunu.bat'),  python_exe, version)
 
-    # plugin.txt をリリースフォ0.0.1
-    # ルダに作成
+    # plugin.txt をリリースフォルダに作成
     print('Creating plugin.txt')
     create_plugin_txt(join(enunu_release_dir, 'plugin.txt'), version)
 
@@ -169,5 +172,6 @@ def main():
 
 
 if __name__ == '__main__':
+    chdir(dirname(__file__))
     main()
     input('Press Enter to exit.')
