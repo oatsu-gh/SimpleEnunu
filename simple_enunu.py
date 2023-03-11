@@ -212,7 +212,13 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
 
     # 音声を生成する
     logging.info('Generating WAV')
-    wav_data, sample_rate = engine.svs(label, vocoder_type='auto')
+    wav_data, sample_rate = engine.svs(
+        label,
+        vocoder_type="auto",
+        post_filter_type="gv",
+        force_fix_vuv=True,
+        segmented_synthesis=True,
+    )    
     # TODO: float32で出力できるようにしたい。
     logging.debug(f'{wav_data.dtype}')
     wavfile.write(path_wav, rate=sample_rate, data=wav_data)
