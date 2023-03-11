@@ -41,18 +41,19 @@ sys.path.append(dirname(__file__))
 import enulib
 
 try:
-    import torch as _
+    import torch
 except ModuleNotFoundError:
     print('----------------------------------------------------------')
     print('初回起動ですね。')
     print('PC環境に合わせてPyTorchを自動インストールします。')
     print('インストール完了までしばらくお待ちください。')
     print('----------------------------------------------------------')
-    enulib.install_torch.ltt_install_torch(sys.executable)
+#    enulib.install_torch.ltt_install_torch(sys.executable)
+    enulib.install_torch.pip_install_torch(abspath(sys.executable))
     print('----------------------------------------------------------')
     print('インストール成功しました。')
     print('----------------------------------------------------------\n')
-    import torch as _
+    import torch
 
 # NNSVSをimportできるようにする
 if exists(join(dirname(__file__), 'nnsvs-master')):
@@ -194,7 +195,7 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
 
     # モデルを読み取る
     logging.info('Loading models')
-    engine = SPSVS(model_dir)
+    engine = SPSVS(model_dir, device="cuda" if torch.cuda.is_available() else "cpu")
     config = engine.config
 
     # UST → LAB の変換をする
