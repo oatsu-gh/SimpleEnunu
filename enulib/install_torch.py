@@ -84,9 +84,7 @@ def ltt_install_torch(python_exe):
     subprocess.run(command, check=True)
     # Install pytorch
     ltt_exe = join(dirname(python_exe), 'Scripts', 'ltt.exe')
-    command = [ltt_exe,
-               '--quiet', '--isolated',
-               '--python', python_exe,
+    command = [ltt_exe, '--quiet', '--python', python_exe,
                'install', 'torch', 'torchaudio', 'torchvision']
     subprocess.run(command, check=True)
 
