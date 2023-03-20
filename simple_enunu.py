@@ -121,7 +121,7 @@ def find_table(model_dir: str) -> str:
     if len(table_files) == 0:
         raise FileNotFoundError(f'Table file does not exist in {model_dir}.')
     elif len(table_files) > 1:
-        logging.warn(f'Multiple table files are found. : {table_files}')
+        logging.warning(f'Multiple table files are found. : {table_files}')
     logging.info(f'Using {basename(table_files[0])}')
     return table_files[0]
 
@@ -144,7 +144,7 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
     # ENUNU 用ではない通常のNNSVSモデルの場合
     elif packed_model_exists(voice_dir):
         model_dir = voice_dir
-        logging.warn(
+        logging.warning(
             'NNSVS model is selected. This model might be not ready for ENUNU.')
     # ENUNU<1.0.0 向けの構成のモデルな場合
     elif exists(join(voice_dir, 'enuconfig.yaml')):
