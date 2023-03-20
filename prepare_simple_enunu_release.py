@@ -52,7 +52,7 @@ def create_enunu_bat(path_out: str, python_exe: str, version: str):
     """
     プラグインの各フォルダに simple_enunu.bat を作成する。
     """
-    s = f'@echo off\n\n' +\
+    s = '@echo off\n\n' +\
         f'echo _____ SimpleEnunu v{version} ________\n' +\
         f'{python_exe} simple_enunu.py %*\n\nPAUSE\n'
     with open(path_out, 'w', encoding='cp932') as f:
