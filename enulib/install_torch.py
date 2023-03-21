@@ -95,7 +95,8 @@ def main():
     """
     if input('インストールされているpytorchを上書きしてもいいですか？(YES/NO): ') == 'YES':
         ltt_install_torch(abspath(sys.executable))
-#        pip_install_torch(abspath(sys.executable))
+    #    pip_install_torch(abspath(sys.executable))
+
 
 if __name__ == '__main__':
     main()
