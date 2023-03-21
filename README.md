@@ -26,9 +26,9 @@ Launch UTAU and D&D SimpleEnunu-{version}.zip into the window.
 
 - Windows 10
 - Python 3.9
-  - utaupy 1.18.0
+  - utaupy 1.18.3
   - numpy 1.23.5
-  - torch  1.13.1+cu117
+  - torch  2.0.0+cu118
   - nnsvs (dev)
   - scikit-learn 1.1.3
 - CUDA 11.7
