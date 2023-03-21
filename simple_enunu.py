@@ -206,9 +206,14 @@ class SimpleEnunu(SPSVS):
         # タイミング補正ツールが指定されていない時はskip
         if 'extensions' not in self.config:
             return duration_modified_labels
-        if self.config.get('timing_editor') is None:
+        if self.config.extensions.get('timing_editor') is None:
             return duration_modified_labels
         # 外部ツールでmono_timingを編集
+        self.logger.info(
+            'Editing timing with %s',
+            self.config.extensions.timing_editor
+        )
+        print('C')
         enulib.extensions.run_extension(
             self.config.extensions.timing_editor,
             full_score=self.path_full_score,
