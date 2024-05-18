@@ -22,6 +22,33 @@ Launch UTAU and D&D SimpleEnunu-{version}.zip into the window.
 1. Download the latest nnsvs from https://github.com/nnsvs/nnsvs
 2. Replace local nnsvs-master directory
 
+## How to activate extensions / 拡張機能の使い方
+
+- `%e` : SimpleEnunu のフォルダ / The directory "simple_enunu.py" exists in
+- `%v` : SimpleEnunu 用モデルのフォルダ / The directory voicebank and "config.yaml" exist in
+- `%u` : UTAU のフォルダ / The directory "utau.exe" exists in
+
+```yaml
+# sample of config.yaml to activate extensions
+extensions:
+	- ust_editor: "%e/voicecolor_applier/voicecolor_applier.py"
+    - timing_editor: "%e/velocity_applier.py"
+```
+## Bundled extensions / 同梱の拡張機能一覧
+
+- voicecolor_applier (ust_editor)
+  - `あ強` などの表情サフィックスを使用可能にします。（例：`強` が含まれる場合は `Power` をフラグ欄に追記します。）
+
+- dummy (-)
+  - とくに何もしません。デバッグ用です。
+
+- timing_repairer (timing_editor)
+  - ラベル内の音素の発声時間に不具合がある場合に自動修正を試みます。
+
+- velocity_applier (timing_editor)
+  - USTの子音速度をもとに子音の長さを調節します。
+
+
 ## Development environment / 開発環境
 
 - Windows 10
