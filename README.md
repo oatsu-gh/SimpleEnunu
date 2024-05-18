@@ -17,11 +17,6 @@ Launch UTAU and D&D SimpleEnunu-{version}.zip into the window.
 3. USTファイルを保存 / Save UST
 4. ノートを2つ以上選択してプラグイン一覧からSimpleEnunuを起動 / Launch SimpleEnunu as a UTAU plugin
 
-## How to use the latest NNSVS (development version) / 同梱NNSVSの更新方法
-
-1. Download the latest nnsvs from https://github.com/nnsvs/nnsvs
-2. Replace local nnsvs-master directory
-
 ## How to activate extensions / 拡張機能の使い方
 
 - `%e` : SimpleEnunu のフォルダ / The directory "simple_enunu.py" exists in
@@ -31,8 +26,8 @@ Launch UTAU and D&D SimpleEnunu-{version}.zip into the window.
 ```yaml
 # sample of config.yaml to activate extensions
 extensions:
-	- ust_editor: "%e/voicecolor_applier/voicecolor_applier.py"
-    - timing_editor: "%e/velocity_applier.py"
+	- ust_editor: "%e/extensions/voicecolor_applier/voicecolor_applier.py"
+    - timing_editor: "%e/extensions/velocity_applier.py"
 ```
 ## Bundled extensions / 同梱の拡張機能一覧
 
@@ -59,3 +54,12 @@ extensions:
   - nnsvs (dev)
   - scikit-learn 1.1.3
 - CUDA 11.7
+
+## How to use the latest NNSVS (development version) / 同梱NNSVSの更新方法
+
+1. Download the latest nnsvs from https://github.com/nnsvs/nnsvs
+2. Replace local nnsvs-master directory
+
+## 環境構築メモ
+
+- python embeddable に SiFiGAN をインストールするとき、docopt が無いとエラーが出る。インストール版の Python から docopt をコピーして対処。(2024/05/19)
