@@ -70,7 +70,8 @@ def pip_install_torch(python_exe):
     except FileNotFoundError:
         pytorch_packages = get_pytorch_package_list('cpu')
     # Pytorchをインストールする。
-    command = [python_exe, '-m', 'pip', 'install'] + pytorch_packages.split()
+    command = [python_exe, '-m', 'pip', 'install',
+               '--quiet'] + pytorch_packages.split()
     print('command:', command)
     subprocess.run(command, check=True)
 
