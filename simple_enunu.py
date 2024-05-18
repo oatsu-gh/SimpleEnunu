@@ -6,6 +6,7 @@
 2. LABファイル→WAVファイル
 """
 import logging
+import shutil
 import sys
 import time
 import warnings
@@ -34,8 +35,10 @@ logging.basicConfig(stream=sys.stdout,
 logging.getLogger('simple_enunu')
 
 
-# autopep8: off ----------------------------------
-
+# pylint: disable=C0411
+# pylint: disable=C0413
+# autopep8: off
+# ------------------------------------------------
 # ENUNUのフォルダ直下にあるフォルダやファイルをimportできるようにする
 sys.path.append(dirname(__file__))
 import enulib
@@ -69,7 +72,10 @@ from utils import enunu2nnsvs  # pylint: disable=import-error
 
 logging.debug('Imported NNSVS module: %s', nnsvs)
 
-# autopep8: on -------------------------------------
+# ------------------------------------------------
+# pylint: enable=C0411
+# pylint: enable=C0413
+# autopep8: on
 
 
 def get_project_path(path_utauplugin):
@@ -184,7 +190,8 @@ class SimpleEnunu(SPSVS):
         super().__init__(model_dir, device=device, verbose=verbose, **kwargs)
         # self.voice_dir = None
         # self.path_plugin = None
-        # self.path_ust = None
+        self.path_ust = None
+        self.path_table = None
         self.path_full_score = None
         self.path_mono_score = None
         self.path_full_timing = None
@@ -194,27 +201,48 @@ class SimpleEnunu(SPSVS):
     def set_paths(self, temp_dir, songname):
         """ファイル入出力のPATHを設定する
         """
-
+        self.path_ust = join(temp_dir, f'{songname}_temp.ust')
+        self.path_table = join(temp_dir, f'{songname}_temp.table')
         self.path_full_score = join(temp_dir, f'{songname}_score.full')
         self.path_mono_score = join(temp_dir, f'{songname}_score.lab')
         self.path_full_timing = join(temp_dir, f'{songname}_timing.full')
         self.path_mono_timing = join(temp_dir, f'{songname}_timing.lab')
 
-    def edit_timing(self, duration_modified_labels):
+    def edit_ust(self, ust: utaupy.ust.Ust, key='ust_editor') -> utaupy.ust.Ust:
+        """合成前に、外部ツールでUSTを編集する
+        """
+        # UST加工ツールが指定されていない時はSkip
+        if 'extensions' not in self.config:
+            return ust
+        if self.config.extensions.get(key) is None:
+            return ust
+        # 外部ツールで ust を編集
+        self.logger.info(
+            'Editing ust with %s',
+            self.config.extensions.ust_editor
+        )
+        enulib.extensions.run_extension(
+            self.config.extensions[key],
+            ust=self.path_ust
+        )
+        return ust
+
+    def edit_timing(self, duration_modified_labels, key='timing_editor'):
         """外部ツールでタイミング補正する
         """
         # タイミング補正ツールが指定されていない時はskip
         if 'extensions' not in self.config:
             return duration_modified_labels
-        if self.config.extensions.get('timing_editor') is None:
+        if self.config.extensions.get(key) is None:
             return duration_modified_labels
         # 外部ツールでmono_timingを編集
         self.logger.info(
             'Editing timing with %s',
-            self.config.extensions.timing_editor
+            self.config.extensions[key]
         )
         enulib.extensions.run_extension(
-            self.config.extensions.timing_editor,
+            self.config.extensions[key],
+            ust=self.path_ust,
             full_score=self.path_full_score,
             mono_score=self.path_mono_score,
             full_timing=self.path_full_timing,
@@ -282,7 +310,7 @@ class SimpleEnunu(SPSVS):
         # NOTE: ここにタイミング補正のための割り込み処理を追加-----------
         # mono_score を出力
         with open(self.path_mono_score, 'w', encoding='utf-8') as f:
-            f.write(str(nnsvs.io.hts.full_to_mono(duration_modified_labels)))
+            f.write(str(nnsvs.io.hts.full_to_mono(labels)))
         # mono_timing を出力
         with open(self.path_mono_timing, 'w', encoding='utf-8') as f:
             f.write(str(nnsvs.io.hts.full_to_mono(duration_modified_labels)))
@@ -308,7 +336,7 @@ class SimpleEnunu(SPSVS):
                 min_duration=5.0,
                 force_split_threshold=5.0,
             )
-            from tqdm.auto import tqdm
+            from tqdm.auto import tqdm  # pylint: disable=C0415
         else:
             duration_modified_labels_segs = [duration_modified_labels]
 
@@ -439,8 +467,9 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
         out_dir = dirname(path_wav)
         temp_dir = join(out_dir, f'{songname}_enutemp')
         path_wav = abspath(path_wav)
+
+    # 一時フォルダを作成する
     makedirs(temp_dir, exist_ok=True)
-    path_full_score = join(temp_dir, f'{songname}_score.full')
 
     # モデルを読み取る
     logging.info('Loading models')
@@ -448,18 +477,29 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
         model_dir, device='cuda' if torch.cuda.is_available() else 'cpu')
     engine.set_paths(temp_dir=temp_dir, songname=songname)
 
+    # USTを一時フォルダに複製
+    print(f'{datetime.now()} : copying UST')
+    shutil.copy2(path_plugin, engine.path_ust)
+    print(f'{datetime.now()} : copying Table')
+    shutil.copy2(find_table(model_dir), engine.path_table)
+
+    # USTファイルを編集する
+    ust = utaupy.ust.load(engine.path_ust)
+    ust = engine.edit_ust(ust)
+    ust.write(engine.path_ust)
+
     # UST → LAB の変換をする
     logging.info('Converting UST -> LAB')
     enulib.utauplugin2score.utauplugin2score(
-        path_plugin,
-        find_table(model_dir),
-        path_full_score,
+        engine.path_ust,
+        engine.path_table,
+        engine.path_full_score,
         strict_sinsy_style=False
     )
 
     # フルラベルファイルを読み取る
     logging.info('Loading LAB')
-    labels = hts.load(path_full_score)
+    labels = hts.load(engine.path_full_score)
 
     # 音声を生成する
     # NOTE: engine.svs を分解してタイミング補正を行えるように改造中。
