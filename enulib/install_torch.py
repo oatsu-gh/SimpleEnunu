@@ -30,7 +30,7 @@ from os.path import abspath, dirname, join
 PYTORCH_STABLE_URL = 'https://download.pytorch.org/whl/torch_stable.html'
 PYTORCH_PACKAGES_DICT = {
     # CUDA 11
-    'release 11.': r'torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117',
+    'release 11.': r'torch==2.0.0+cu118 torchvision==0.15.1+cu118 torchaudio==2.0.1 --extra-index-url https://download.pytorch.org/whl/cu118',
     # CUDA 10
     'release 10.': r'torch==1.10.1+cu102 torchvision==0.11.2+cu102 torchaudio==0.10.1 --extra-index-url https://download.pytorch.org/whl/cu102',
     # no CUDA
@@ -70,7 +70,8 @@ def pip_install_torch(python_exe):
     except FileNotFoundError:
         pytorch_packages = get_pytorch_package_list('cpu')
     # Pytorchをインストールする。
-    command = [python_exe, '-m', 'pip', 'install'] + pytorch_packages.split()
+    command = [python_exe, '-m', 'pip', 'install',
+               '--quiet'] + pytorch_packages.split()
     print('command:', command)
     subprocess.run(command, check=True)
 
@@ -95,7 +96,8 @@ def main():
     """
     if input('インストールされているpytorchを上書きしてもいいですか？(YES/NO): ') == 'YES':
         ltt_install_torch(abspath(sys.executable))
-#        pip_install_torch(abspath(sys.executable))
+    #    pip_install_torch(abspath(sys.executable))
+
 
 if __name__ == '__main__':
     main()

@@ -139,12 +139,12 @@ def main():
     print(f'Copying {python_dir} -> {join(enunu_release_dir, python_dir)}')
     shutil.copytree(python_dir, join(enunu_release_dir, python_dir))
 
-    # enunu.py と hts2wav.py と nnsvs_gen_override.py をコピーする
-    print('Copying python scripts')
+    # なんかいろいろコピーする
+    print('Copying scripts')
     shutil.copy2('simple_enunu.py', join(enunu_release_dir))
-    # shutil.copy2('install_torch.py', join(enunu_release_dir))
-    # shutil.copy2('utauplugin2hts.py', join(enunu_release_dir))
+    shutil.copy2('reinstall_torch.bat', join(enunu_release_dir))
     shutil.copytree('enulib', join(enunu_release_dir, 'enulib'))
+    shutil.copytree('extensions', join(enunu_release_dir, 'extensions'))
 
     # キャッシュファイルを削除する
     print('Removing cache')
