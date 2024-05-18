@@ -28,8 +28,8 @@
 ```yaml
 # sample of config.yaml to activate extensions
 extensions:
-	- ust_editor: "%e/voicecolor_applier/voicecolor_applier.py"
-    - timing_editor: "%e/velocity_applier.py"
+	- ust_editor: "%e/extensions/voicecolor_applier/voicecolor_applier.py"
+    - timing_editor: "%e/extensions/velocity_applier.py"
 ```
 
 - PyTorch を再インストールするためのバッチファイルを追加
