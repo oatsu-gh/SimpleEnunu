@@ -213,7 +213,6 @@ class SimpleEnunu(SPSVS):
             'Editing timing with %s',
             self.config.extensions.timing_editor
         )
-        print('C')
         enulib.extensions.run_extension(
             self.config.extensions.timing_editor,
             full_score=self.path_full_score,
