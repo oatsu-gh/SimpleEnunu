@@ -38,17 +38,17 @@ extensions:
 ## v0.2.2
 
 - UST加工ツール (ust_editor) で加工した結果が反映されていない不具合を直した。
-- UST加工ツール (ust_editor) と タイミング加工ツール (timing_editor) を使用できるようにした。
-  - いずれも複数の拡張機能を呼び出せるようにした。
+- UST加工ツール (ust_editor) と タイミング加工ツール (timing_editor) として、それぞれ複数の拡張機能を呼び出せるようにした。
 
 ```yaml
 # sample of config.yaml to activate extensions
 extensions:
-  - ust_editor: 
+  - ust_editor:
     - "%e/extensions/voicecolor_applier/voicecolor_applier.py"
     - "%e/extensions/voicecolor_applier/lyric_nyaizer.py"
-  - timing_editor: "%e/extensions/velocity_applier.py"
+  - timing_editor:
+    - "%e/extensions/velocity_applier.py"
 ```
 
 - 拡張機能に **lyric_nyaizer** を追加。
-  - ust_editor として使用してください。歌詞を `ny a` にします。
+  - ust_editor に指定して使用してください。歌詞を `ny a` にします。
