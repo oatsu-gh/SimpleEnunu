@@ -16,7 +16,7 @@ from os import chdir, listdir, makedirs, rename, startfile
 from os.path import abspath, basename, dirname, exists, join, relpath, splitext
 from shutil import move
 from tempfile import TemporaryDirectory, mkdtemp
-from typing import Union
+from typing import Iterable, List, Union
 
 import colored_traceback.always  # pylint: disable=unused-import
 import numpy as np
@@ -208,51 +208,93 @@ class SimpleEnunu(SPSVS):
         self.path_full_timing = join(temp_dir, f'{songname}_timing.full')
         self.path_mono_timing = join(temp_dir, f'{songname}_timing.lab')
 
-    def edit_ust(self, ust: utaupy.ust.Ust, key='ust_editor') -> utaupy.ust.Ust:
-        """合成前に、外部ツールでUSTを編集する
+    def get_extension_path_list(self, key) -> List[str]:
         """
+        拡張機能のパスのリストを取得する。
+        パスが複数指定されていてもひとつしか指定されていなくてもループできるように、リストを返す。
+        """
+        config = self.config
+        # 拡張機能の項目がなければNoneを返す。
+        if 'extensions' not in config:
+            return []
+        # 目的の拡張機能のパスがあれば取得する。
+        extension_list = config.extensions.get(key)
+        if extension_list is None:
+            return []
+        if extension_list == "":
+            return []
+        if isinstance(extension_list, str):
+            return [extension_list]
+        if isinstance(extension_list, Iterable):
+            return list(extension_list)
+        # 空文字列でもNULLでもリストでも文字列でもない場合
+        raise TypeError(
+            f'Extension path must be null or strings or list, not {type(extension_list)} for {extension_list}'
+        )
+
+    def edit_ust(self, ust: utaupy.ust.Ust, key='ust_editor') -> utaupy.ust.Ust:
+        """
+        合成前に、外部ツールでUSTを編集する。
+        複数ツール
+        """
+        # UST加工ツールのパスを取得
+        extension_list = self.get_extension_path_list(key)
         # UST加工ツールが指定されていない時はSkip
-        if 'extensions' not in self.config:
+        if len(extension_list) == 0:
             return ust
-        if self.config.extensions.get(key) is None:
-            return ust
+
+        # 念のためustファイルを最新データで上書きする
+        ust.write(self.path_ust)
         # 外部ツールで ust を編集
-        self.logger.info(
-            'Editing ust with %s',
-            self.config.extensions.ust_editor
-        )
-        enulib.extensions.run_extension(
-            self.config.extensions[key],
-            ust=self.path_ust
-        )
+        for path_extension in extension_list:
+            self.logger.info('Editing UST with %s', path_extension)
+            enulib.extensions.run_extension(
+                path_extension,
+                ust=self.path_ust,
+                table=self.path_table
+            )
+        # 編集後のustファイルを読み取る
+        ust = utaupy.ust.load(self.path_ust)
         return ust
 
     def edit_timing(self, duration_modified_labels, key='timing_editor'):
-        """外部ツールでタイミング補正する
         """
-        # タイミング補正ツールが指定されていない時はskip
-        if 'extensions' not in self.config:
+        外部ツールでタイミング編集する
+        """
+        # タイミング加工ツールのパスを取得
+        extension_list = self.get_extension_path_list(key)
+        # 指定されていない場合はSkip
+        if len(extension_list) == 0:
             return duration_modified_labels
-        if self.config.extensions.get(key) is None:
-            return duration_modified_labels
-        # 外部ツールでmono_timingを編集
-        self.logger.info(
-            'Editing timing with %s',
-            self.config.extensions[key]
-        )
-        enulib.extensions.run_extension(
-            self.config.extensions[key],
-            ust=self.path_ust,
-            full_score=self.path_full_score,
-            mono_score=self.path_mono_score,
-            full_timing=self.path_full_timing,
-            mono_timing=self.path_mono_timing
-        )
-        # mono_timing の時刻情報を full_timing に移植
-        enulib.extensions.merge_mono_time_change_to_full(
-            self.path_mono_timing,
-            self.path_full_timing
-        )
+
+        # 複数ツールのすべてについて処理実施する
+        for path_extension in extension_list:
+            print(f'Editing timing with {path_extension}')
+            # 変更前のモノラベルを読んでおく
+            with open(self.path_mono_timing, encoding='utf-8') as f:
+                str_mono_old = f.read()
+            enulib.extensions.run_extension(
+                path_extension,
+                ust=self.path_ust,
+                table=self.path_table,
+                full_score=self.path_full_score,
+                mono_score=self.path_mono_score,
+                full_timing=self.path_full_timing,
+                mono_timing=self.path_mono_timing
+            )
+            # 変更後のモノラベルを読む
+            with open(self.path_mono_timing, encoding='utf-8') as f:
+                str_mono_new = f.read()
+            # モノラベルの時刻が変わっていたらフルラベルに転写して、
+            # そうでなければフルラベルの時刻をモノラベルに転写する。
+            # NOTE: 歌詞は編集していないという前提で処理する。
+            if enulib.extensions.str_has_been_changed(str_mono_old, str_mono_new):
+                enulib.extensions.merge_mono_time_change_to_full(
+                    self.path_mono_timing, self.path_full_timing)
+            else:
+                enulib.extensions.merge_full_time_change_to_mono(
+                    self.path_full_timing, self.path_mono_timing)
+
         # 編集後のfull_timing を読み取る
         duration_modified_labels = hts.load(self.path_full_timing).round_()
         return duration_modified_labels
