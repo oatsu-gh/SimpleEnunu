@@ -37,6 +37,9 @@ extensions:
 - dummy (-)
   - とくに何もしません。デバッグ用です。
 
+- lyric_nyaizer (ust_editor)
+  - 歌詞を `ny a` にします。主にデバッグ用です。
+
 - timing_repairer (timing_editor)
   - ラベル内の音素の発声時間に不具合がある場合に自動修正を試みます。
 
