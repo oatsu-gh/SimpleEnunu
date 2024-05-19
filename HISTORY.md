@@ -51,4 +51,4 @@ extensions:
 ```
 
 - 拡張機能に **lyric_nyaizer** を追加。
-  - ust_editor として使用してください。歌詞を [ny a] にします。
+  - ust_editor として使用してください。歌詞を `ny a` にします。
