@@ -26,9 +26,10 @@ Launch UTAU and D&D SimpleEnunu-{version}.zip into the window.
 ```yaml
 # sample of config.yaml to activate extensions
 extensions:
-	- ust_editor: "%e/extensions/voicecolor_applier/voicecolor_applier.py"
-    - timing_editor: "%e/extensions/velocity_applier.py"
+    ust_editor: "%e/extensions/voicecolor_applier/voicecolor_applier.py"
+    timing_editor: "%e/extensions/velocity_applier.py"
 ```
+
 ## Bundled extensions / 同梱の拡張機能一覧
 
 - voicecolor_applier (ust_editor)
@@ -66,3 +67,9 @@ extensions:
 ## 環境構築メモ
 
 - python embeddable に SiFiGAN をインストールするとき、docopt が無いとエラーが出る。インストール版の Python から docopt をコピーして対処。(2024/05/19)
+- python embeddable に tkinter がないのでインストール版の Python から下記内容でコピーして対処。(2024/05/26)
+  - python/tcl/  → python-embeddable/tcl/
+  - python/Lib/tkinter/ → python/tkinter/
+  - python/DLLs/\_tkinter.pyd → python-embeddable/\_tkinter.pyd 
+  - python/DLLs/tcl86t.pyd → python-embeddable/tcl86t.pyd 
+  - python/DLLs/tk86t.pyd → python-embeddable/tk86t.pyd 

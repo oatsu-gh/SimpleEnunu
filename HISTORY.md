@@ -28,8 +28,8 @@
 ```yaml
 # sample of config.yaml to activate extensions
 extensions:
-	- ust_editor: "%e/extensions/voicecolor_applier/voicecolor_applier.py"
-    - timing_editor: "%e/extensions/velocity_applier.py"
+    ust_editor: "%e/extensions/voicecolor_applier/voicecolor_applier.py"
+    timing_editor: "%e/extensions/velocity_applier.py"
 ```
 
 - PyTorch を再インストールするためのバッチファイルを追加
@@ -43,12 +43,22 @@ extensions:
 ```yaml
 # sample of config.yaml to activate extensions
 extensions:
-  - ust_editor:
+  ust_editor:
     - "%e/extensions/voicecolor_applier/voicecolor_applier.py"
     - "%e/extensions/voicecolor_applier/lyric_nyaizer.py"
-  - timing_editor:
+  timing_editor:
     - "%e/extensions/velocity_applier.py"
 ```
 
 - 拡張機能に **lyric_nyaizer** を追加。
   - ust_editor に指定して使用してください。歌詞を `ny a` にします。
+
+## v0.3.2
+
+- 実行時に「名前を付けて保存」ダイアログを表示するように仕様変更。
+  - LABなどの中間ファイルは変わらずustと同じフォルダに生成されます。
+- 必要なライブラリのインストール元を下記に変更
+  - SiFiGAN (https://github.com/nnsvs/SiFiGAN)
+  - uSFGAN (https://github.com/nnsvs/HN-UnifiedSourceFilterGAN)
+  - ParallelWaveGAN (https://github.com/nnsvs/ParallelWaveGAN)
+- PyTorch のインストールに light-the-torch を使用するように変更。
