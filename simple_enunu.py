@@ -9,13 +9,16 @@ import logging
 import shutil
 import sys
 import time
+import tkinter
 import warnings
 from datetime import datetime
 from glob import glob
 from os import chdir, listdir, makedirs, rename, startfile
-from os.path import abspath, basename, dirname, exists, join, relpath, splitext
+from os.path import (abspath, basename, dirname, exists, expanduser, join,
+                     relpath, splitext)
 from shutil import move
 from tempfile import TemporaryDirectory, mkdtemp
+from tkinter.filedialog import asksaveasfilename
 from typing import Iterable, List, Union
 
 import colored_traceback.always  # pylint: disable=unused-import
@@ -51,8 +54,8 @@ except ModuleNotFoundError:
     print('PC環境に合わせてPyTorchを自動インストールします。')
     print('インストール完了までしばらくお待ちください。')
     print('----------------------------------------------------------')
-#    enulib.install_torch.ltt_install_torch(sys.executable)
-    enulib.install_torch.pip_install_torch(abspath(sys.executable))
+    enulib.install_torch.ltt_install_torch(sys.executable)
+    # enulib.install_torch.pip_install_torch(abspath(sys.executable))
     print('----------------------------------------------------------')
     print('インストール成功しました。')
     print('----------------------------------------------------------\n')
@@ -456,6 +459,46 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
     logging.info('reading settings in TMP')
     path_ust, voice_dir, _ = get_project_path(path_plugin)
 
+    # 日付時刻を取得
+    str_now = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+    # wav出力パスが指定されていない(プラグインとして実行している)場合
+    if path_wav is None:
+        # tkinterの親Windowを表示させないようにする
+        root = tkinter.Tk()
+        root.withdraw()
+        # 入出力パスを設定する
+        if path_ust is not None:
+            songname = splitext(basename(path_ust))[0]
+            out_dir = dirname(path_ust)
+            temp_dir = join(out_dir, f'{songname}_enutemp')
+            # wavファイルの保存先を指定
+            path_wav = asksaveasfilename(
+                initialdir=out_dir,
+                initialfile=f'{songname}.wav',
+                filetypes=[('Wave sound file', '.wav'), ('All files', '*')],
+                defaultextension='.wav')
+        # WAV出力パス指定なしかつUST未保存の場合
+        else:
+            logging.info('USTが保存されていないのでデスクトップにWAV出力します。')
+            songname = f'temp__{str_now}'
+            out_dir = mkdtemp(prefix='enunu-')
+            temp_dir = join(out_dir, f'{songname}_enutemp')
+            # wavファイルの保存先を指定
+            path_wav = asksaveasfilename(
+                initialdir=expanduser(join('~', 'Desktop')),
+                initialfile=f'{songname}.wav',
+                filetypes=[('Wave sound file', '.wav'), ('All files', '*')],
+                defaultextension='.wav')
+        assert path_wav != '', 'ファイル名が入力されていません'
+
+    # WAV出力パスが指定されている場合
+    else:
+        songname = splitext(basename(path_wav))[0]
+        out_dir = dirname(path_wav)
+        temp_dir = join(out_dir, f'{songname}_enutemp')
+        path_wav = abspath(path_wav)
+
     # ENUNU=>1.0.0 または SimpleEnunu 用に作成されたNNSVSモデルの場合
     if packed_model_exists(join(voice_dir, 'model')):
         model_dir = join(voice_dir, 'model')
@@ -484,31 +527,6 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
 
     # カレントディレクトリを音源フォルダに変更する
     chdir(voice_dir)
-
-    # 日付時刻を取得
-    str_now = datetime.now().strftime('%Y%m%d_%H%M%S')
-
-    # wav出力パスが指定されていない(プラグインとして実行している)場合
-    if path_wav is None:
-        # 入出力パスを設定する
-        if path_ust is not None:
-            songname = splitext(basename(path_ust))[0]
-            out_dir = dirname(path_ust)
-            temp_dir = join(out_dir, f'{songname}_enutemp')
-            path_wav = abspath(join(out_dir, f'{songname}__{str_now}.wav'))
-        # WAV出力パス指定なしかつUST未保存の場合
-        else:
-            logging.info('USTが保存されていないので一時フォルダにWAV出力します。')
-            songname = f'temp__{str_now}'
-            out_dir = mkdtemp(prefix='enunu-')
-            temp_dir = join(out_dir, f'{songname}_enutemp')
-            path_wav = abspath(join(out_dir, f'{songname}__{str_now}.wav'))
-    # WAV出力パスが指定されている場合
-    else:
-        songname = splitext(basename(path_wav))[0]
-        out_dir = dirname(path_wav)
-        temp_dir = join(out_dir, f'{songname}_enutemp')
-        path_wav = abspath(path_wav)
 
     # 一時フォルダを作成する
     makedirs(temp_dir, exist_ok=True)
