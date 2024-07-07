@@ -232,7 +232,8 @@ class SimpleEnunu(SPSVS):
             return list(extension_list)
         # 空文字列でもNULLでもリストでも文字列でもない場合
         raise TypeError(
-            f'Extension path must be null or strings or list, not {type(extension_list)} for {extension_list}'
+            'Extension path must be null or strings or list, '
+            f'not {type(extension_list)} for {extension_list}'
         )
 
     def edit_ust(self, ust: utaupy.ust.Ust, key='ust_editor') -> utaupy.ust.Ust:
@@ -259,6 +260,27 @@ class SimpleEnunu(SPSVS):
         # 編集後のustファイルを読み取る
         ust = utaupy.ust.load(self.path_ust)
         return ust
+
+    def edit_score(self, score_labels, key='score_editor'):
+        """
+        USTから変換して生成したフルラベルを外部ツールで編集する。
+        """
+        # LAB加工ツールのパスを取得
+        extension_list = self.get_extension_path_list(key)
+        # LAB加工ツールが指定されていない時はSkip
+        if len(extension_list) == 0:
+            return score_labels
+        # 外部ツールでラベルを編集
+        for path_extension in extension_list:
+            self.logger.info('Editing LAB (score) with %s', path_extension)
+            enulib.extensions.run_extension(
+                path_extension,
+                ust=self.path_ust,
+                table=self.path_table,
+                full_score=self.path_full_score
+            )
+        score_labels = hts.load(self.path_full_score).round_()
+        return score_labels
 
     def edit_timing(self, duration_modified_labels, key='timing_editor'):
         """
@@ -472,25 +494,12 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
             songname = splitext(basename(path_ust))[0]
             out_dir = dirname(path_ust)
             temp_dir = join(out_dir, f'{songname}_enutemp')
-            # wavファイルの保存先を指定
-            path_wav = asksaveasfilename(
-                initialdir=out_dir,
-                initialfile=f'{songname}.wav',
-                filetypes=[('Wave sound file', '.wav'), ('All files', '*')],
-                defaultextension='.wav')
         # WAV出力パス指定なしかつUST未保存の場合
         else:
             logging.info('USTが保存されていないのでデスクトップにWAV出力します。')
             songname = f'temp__{str_now}'
             out_dir = mkdtemp(prefix='enunu-')
             temp_dir = join(out_dir, f'{songname}_enutemp')
-            # wavファイルの保存先を指定
-            path_wav = asksaveasfilename(
-                initialdir=expanduser(join('~', 'Desktop')),
-                initialfile=f'{songname}.wav',
-                filetypes=[('Wave sound file', '.wav'), ('All files', '*')],
-                defaultextension='.wav')
-        assert path_wav != '', 'ファイル名が入力されていません'
 
     # WAV出力パスが指定されている場合
     else:
@@ -561,6 +570,9 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
     logging.info('Loading LAB')
     labels = hts.load(engine.path_full_score)
 
+    # LABファイルを編集する。
+    labels = engine.edit_score(labels)
+
     # 音声を生成する
     # NOTE: engine.svs を分解してタイミング補正を行えるように改造中。
     logging.info('Generating WAV')
@@ -574,8 +586,20 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
     )
 
     # wav出力のフォーマットを確認する
-
     wav_data = adjust_wav_gain_for_float32(wav_data)
+
+    # WAV出力先が未定の場合
+    if path_wav is None:
+        print('表示されているエクスプローラーの画面から、WAVファイルに名前を付けて保存してください。')
+        # wavファイルの保存先を指定
+        path_wav = asksaveasfilename(
+            initialdir=expanduser(join('~', 'Desktop')),
+            initialfile=f'{songname}.wav',
+            filetypes=[('Wave sound file', '.wav'), ('All files', '*')],
+            defaultextension='.wav')
+    assert path_wav != '', 'ファイル名が入力されていません'
+
+    # wav出力
     wavfile.write(path_wav, rate=sample_rate, data=wav_data)
 
     # 音声を再生する。
