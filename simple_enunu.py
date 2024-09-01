@@ -591,9 +591,13 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
     # WAV出力先が未定の場合
     if path_wav is None:
         print('表示されているエクスプローラーの画面から、WAVファイルに名前を付けて保存してください。')
+        if out_dir is not None:
+            initialdir = out_dir
+        else:
+            initialdir = expanduser(join('~', 'Desktop'))
         # wavファイルの保存先を指定
         path_wav = asksaveasfilename(
-            initialdir=expanduser(join('~', 'Desktop')),
+            initialdir=initialdir,
             initialfile=f'{songname}.wav',
             filetypes=[('Wave sound file', '.wav'), ('All files', '*')],
             defaultextension='.wav')

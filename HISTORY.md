@@ -53,7 +53,7 @@ extensions:
 - 拡張機能に **lyric_nyaizer** を追加。
   - ust_editor に指定して使用してください。歌詞を `ny a` にします。
 
-## v0.3.2
+## v0.3.0
 
 - 実行時に「名前を付けて保存」ダイアログを表示するように仕様変更。
   - LABなどの中間ファイルは変わらずustと同じフォルダに生成されます。
@@ -62,3 +62,9 @@ extensions:
   - uSFGAN (https://github.com/nnsvs/HN-UnifiedSourceFilterGAN)
   - ParallelWaveGAN (https://github.com/nnsvs/ParallelWaveGAN)
 - PyTorch のインストールに light-the-torch を使用するように変更。
+
+## v0.3.1
+
+- PyTorch のインストールに失敗する不具合を修正。
+- 「名前を付けて保存」のタイミングを音声合成前ではなく音声合成後に変更。
+  - 保存わすれで時間を無駄にするのを防ぐため。
