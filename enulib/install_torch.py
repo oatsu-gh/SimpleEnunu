@@ -89,7 +89,7 @@ def ltt_install_torch(python_exe):
     subprocess.run(command, check=True)
     # Install pytorch
     command = [python_exe, '-m', 'light_the_torch', 'install',
-               'install', 'torch', 'torchaudio', 'torchvision',
+               'torch', 'torchaudio', 'torchvision',
                '--no-warn-script-location',
                '--disable-pip-version-check',
                ]
