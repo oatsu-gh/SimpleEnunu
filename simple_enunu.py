@@ -203,9 +203,10 @@ class ENUNU(SPSVS):
         self.path_f0 = None
         self.path_vuv = None
         self.path_bap = None
+        self.path_feedback = None
         # self.path_wav = None
 
-    def set_paths(self, temp_dir, songname):
+    def set_paths(self, temp_dir, songname, path_feedback=None):
         """ファイル入出力のPATHを設定する
         """
         self.path_ust = join(temp_dir, f'{songname}_temp.ust')
@@ -218,6 +219,8 @@ class ENUNU(SPSVS):
         self.path_f0 = join(temp_dir, f'{songname}_acoustic_f0.csv')
         self.path_vuv = join(temp_dir, f'{songname}_acoustic_vuv.csv')
         self.path_bap = join(temp_dir, f'{songname}_acoustic_bap.csv')
+        if path_feedback is not None:
+            self.path_feedback = path_feedback
 
     def get_extension_path_list(self, key) -> List[str]:
         """
@@ -263,7 +266,8 @@ class ENUNU(SPSVS):
             enulib.extensions.run_extension(
                 path_extension,
                 ust=self.path_ust,
-                table=self.path_table
+                table=self.path_table,
+                feedback=self.path_feedback
             )
         # 編集後のustファイルを読み取る
         ust = utaupy.ust.load(self.path_ust)
@@ -285,6 +289,7 @@ class ENUNU(SPSVS):
                 path_extension,
                 ust=self.path_ust,
                 table=self.path_table,
+                feedback=self.path_feedback,
                 full_score=self.path_full_score
             )
         score_labels = hts.load(self.path_full_score).round_()
@@ -310,6 +315,7 @@ class ENUNU(SPSVS):
                 path_extension,
                 ust=self.path_ust,
                 table=self.path_table,
+                feedback=self.path_feedback,
                 full_score=self.path_full_score,
                 mono_score=self.path_mono_score,
                 full_timing=self.path_full_timing,
@@ -374,6 +380,7 @@ class ENUNU(SPSVS):
                 path_extension,
                 ust=self.path_ust,
                 table=self.path_table,
+                feedback=self.path_feedback,
                 full_score=self.path_full_score,
                 mono_score=self.path_mono_score,
                 full_timing=self.path_full_timing,
@@ -636,7 +643,8 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
     engine = ENUNU(
         model_dir,
         device='cuda' if torch.cuda.is_available() else 'cpu')
-    engine.set_paths(temp_dir=temp_dir, songname=songname)
+    engine.set_paths(temp_dir=temp_dir, songname=songname,
+                     path_feedback=path_plugin)
 
     # NOTE: 後方互換のため
     # enuconfigが存在する場合、そこに記載されている拡張機能のパスをconfigに追加する
@@ -683,7 +691,7 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
         vocoder_type='auto',
         post_filter_type='gv',
         force_fix_vuv=True,
-        segmented_synthesis=False,
+        segmented_synthesis=True
     )
 
     # wav出力のフォーマットを確認する
