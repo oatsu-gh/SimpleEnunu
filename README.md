@@ -34,16 +34,24 @@ extensions:
 
 - voicecolor_applier (ust_editor)
   - `あ強` などの表情サフィックスを使用可能にします。（例：`強` が含まれる場合は `Power` をフラグ欄に追記します。）
-
 - dummy (-)
   - とくに何もしません。デバッグ用です。
+- f0_feedbacker (acoustic_editor)
+  - ENUNUモデルで合成したピッチ線を UST のピッチにフィードバックします。EnuPitch のようなことができます。
+
+- f0_smoother (acoustic_editor)
+  - 急峻なピッチ変化を滑らかにします。
 
 - lyric_nyaizer (ust_editor)
   - 歌詞を `ny a` にします。主にデバッグ用です。
+- score_myaizer (score_editor)
+  - 歌詞を `my a` にします。主にデバッグ用です。
+
+- style_shifter (ust_editor, acoustic_editor)
+  - USTのフラグ に `S5` や `S-3` のように記入することで、スタイルシフトのようなことができます。
 
 - timing_repairer (timing_editor)
   - ラベル内の音素の発声時間に不具合がある場合に自動修正を試みます。
-
 - velocity_applier (timing_editor)
   - USTの子音速度をもとに子音の長さを調節します。
 
