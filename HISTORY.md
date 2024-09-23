@@ -73,6 +73,9 @@ extensions:
 
 - 拡張機能機能実行時に、UTAUにフィードバックするためのTMPファイルのパスを `--feedback` の引数で渡すようにした。
 - ピッチ加工ツールやスタイルシフトツールなどの拡張機能を指定する、`acoustic_editor` を使えるようにした。
+  - 拡張機能 f0_smoother を追加 (ENUNUからのコピー)
+  - 拡張機能 f0_feedbacker を追加 (EnuPitchからコピーしてすこし改良)
+  - 拡張機能 style_shifter を追加 (ENUNUからのコピー)
 
 ```yaml
 # sample of config.yaml to activate extensions
