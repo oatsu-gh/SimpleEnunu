@@ -68,3 +68,25 @@ extensions:
 - PyTorch のインストールに失敗する不具合を修正。
 - 「名前を付けて保存」のタイミングを音声合成前ではなく音声合成後に変更。
   - 保存わすれで時間を無駄にするのを防ぐため。
+
+## v0.4.0
+
+- 拡張機能機能実行時に、UTAUにフィードバックするためのTMPファイルのパスを `--feedback` の引数で渡すようにした。
+- ピッチ加工ツールやスタイルシフトツールなどの拡張機能を指定する、`acoustic_editor` を使えるようにした。
+  - 拡張機能 f0_smoother を追加 (ENUNUからのコピー)
+  - 拡張機能 f0_feedbacker を追加 (EnuPitchからコピーしてすこし改良)
+  - 拡張機能 style_shifter を追加 (ENUNUからのコピー)
+
+```yaml
+# sample of config.yaml to activate extensions
+extensions:
+  ust_editor:
+    - "%e/extensions/voicecolor_applier/voicecolor_applier.py"
+    - "%e/extensions/voicecolor_applier/lyric_nyaizer.py"
+    - "%e/extensions/style_shifter.py"
+  timing_editor:
+    - "%e/extensions/velocity_applier.py"
+  acoustic_editor:
+    - "%e/extensions/style_shifter.py"
+    - "%e/extensions/f0_smoother.py"
+```

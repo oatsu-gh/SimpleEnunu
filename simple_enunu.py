@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 # coding: utf-8
-# Copyright (c) 2023 oatsu
+# Copyright (c) 2023-2024 oatsu
 """
 1. UTAUプラグインのテキストファイルを読み取る。
 2. LABファイル→WAVファイル
@@ -177,8 +177,8 @@ def adjust_wav_gain_for_float32(wav: np.ndarray):
         return wav
 
 
-class SimpleEnunu(SPSVS):
-    """SimpleEnunuで合成するとき用に、外部ソフトでタイミング補正ができるようにする。
+class ENUNU(SPSVS):
+    """ENUNU で合成するするときのクラス。
 
     Args:
         model_dir (str): NNSVSのモデルがあるフォルダ
@@ -199,9 +199,14 @@ class SimpleEnunu(SPSVS):
         self.path_mono_score = None
         self.path_full_timing = None
         self.path_mono_timing = None
+        self.path_mgc = None
+        self.path_f0 = None
+        self.path_vuv = None
+        self.path_bap = None
+        self.path_feedback = None
         # self.path_wav = None
 
-    def set_paths(self, temp_dir, songname):
+    def set_paths(self, temp_dir, songname, path_feedback=None):
         """ファイル入出力のPATHを設定する
         """
         self.path_ust = join(temp_dir, f'{songname}_temp.ust')
@@ -210,6 +215,12 @@ class SimpleEnunu(SPSVS):
         self.path_mono_score = join(temp_dir, f'{songname}_score.lab')
         self.path_full_timing = join(temp_dir, f'{songname}_timing.full')
         self.path_mono_timing = join(temp_dir, f'{songname}_timing.lab')
+        self.path_mgc = join(temp_dir, f'{songname}_acoustic_mgc.csv')
+        self.path_f0 = join(temp_dir, f'{songname}_acoustic_f0.csv')
+        self.path_vuv = join(temp_dir, f'{songname}_acoustic_vuv.csv')
+        self.path_bap = join(temp_dir, f'{songname}_acoustic_bap.csv')
+        if path_feedback is not None:
+            self.path_feedback = path_feedback
 
     def get_extension_path_list(self, key) -> List[str]:
         """
@@ -255,7 +266,8 @@ class SimpleEnunu(SPSVS):
             enulib.extensions.run_extension(
                 path_extension,
                 ust=self.path_ust,
-                table=self.path_table
+                table=self.path_table,
+                feedback=self.path_feedback
             )
         # 編集後のustファイルを読み取る
         ust = utaupy.ust.load(self.path_ust)
@@ -277,6 +289,7 @@ class SimpleEnunu(SPSVS):
                 path_extension,
                 ust=self.path_ust,
                 table=self.path_table,
+                feedback=self.path_feedback,
                 full_score=self.path_full_score
             )
         score_labels = hts.load(self.path_full_score).round_()
@@ -302,6 +315,7 @@ class SimpleEnunu(SPSVS):
                 path_extension,
                 ust=self.path_ust,
                 table=self.path_table,
+                feedback=self.path_feedback,
                 full_score=self.path_full_score,
                 mono_score=self.path_mono_score,
                 full_timing=self.path_full_timing,
@@ -323,6 +337,82 @@ class SimpleEnunu(SPSVS):
         # 編集後のfull_timing を読み取る
         duration_modified_labels = hts.load(self.path_full_timing).round_()
         return duration_modified_labels
+
+    def edit_acoustic(self, multistream_features, feature_type, key='acoustic_editor'):
+        """
+        外部ツールでピッチなどを編集する。
+        """
+        # acoustic加工ツールのパスを取得
+        extension_list = self.get_extension_path_list(key)
+        # ツールが指定されていない場合はSkip
+        if len(extension_list) == 0:
+            return multistream_features
+
+        # 想定外のボコーダが指定された場合もSkip
+        if feature_type not in ['world', 'melf0']:
+            self.logger.warning(
+                'Unknown feature_type "%s" is selected. Skipping acoustic editor.',
+                feature_type)
+            return multistream_features
+
+        # ツールが指定されている場合はCSV書き出し
+        if feature_type == 'world':
+            assert len(multistream_features) == 4
+            mgc, lf0, vuv, bap = multistream_features
+            f0 = np.exp(lf0)
+            np.savetxt(self.path_mgc, mgc, fmt="%.16f", delimiter=",")
+            np.savetxt(self.path_f0, f0, fmt="%.16f", delimiter=",")
+            np.savetxt(self.path_vuv, vuv, fmt="%.16f", delimiter=",")
+            np.savetxt(self.path_bap, bap, fmt="%.16f", delimiter=",")
+        elif feature_type == 'melf0':
+            assert len(multistream_features) == 3
+            mgc, lf0, vuv = multistream_features
+            f0 = np.exp(lf0)
+            # CSV書き出し
+            np.savetxt(self.path_mgc, mgc, fmt="%.16f", delimiter=",")
+            np.savetxt(self.path_f0, f0, fmt="%.16f", delimiter=",")
+            np.savetxt(self.path_vuv, vuv, fmt="%.16f", delimiter=",")
+
+        # 複数ツールのすべてについて処理実施する
+        for path_extension in extension_list:
+            print(f'Editing acoustic features with {path_extension}')
+            enulib.extensions.run_extension(
+                path_extension,
+                ust=self.path_ust,
+                table=self.path_table,
+                feedback=self.path_feedback,
+                full_score=self.path_full_score,
+                mono_score=self.path_mono_score,
+                full_timing=self.path_full_timing,
+                mono_timing=self.path_mono_timing,
+                mgc=self.path_mgc,
+                f0=self.path_f0,
+                vuv=self.path_vuv,
+                bap=self.path_bap
+            )
+
+        # 編集が終わったらCSV読み取り
+        if feature_type == 'world':
+            mgc = np.loadtxt(self.path_mgc, delimiter=',', dtype=np.float64)
+            lf0 = np.log(np.loadtxt(self.path_f0, delimiter=',', dtype=np.float64)
+                         ).reshape(-1, 1)
+            vuv = np.loadtxt(self.path_vuv, delimiter=',',
+                             dtype=np.float64).reshape(-1, 1)
+            bap = np.loadtxt(self.path_bap, delimiter=',', dtype=np.float64)
+            # 統合
+            multistream_features = (mgc, lf0, vuv, bap)
+        elif feature_type == 'melf0':
+            # 編集が終わったらCSV読み取り
+            mgc = np.loadtxt(self.path_mgc, delimiter=',', dtype=np.float64)
+            lf0 = np.log(np.loadtxt(self.path_f0, delimiter=',', dtype=np.float64)
+                         ).reshape(-1, 1)
+            vuv = np.loadtxt(self.path_vuv, delimiter=',', dtype=np.float64
+                             ).reshape(-1, 1)
+            # 統合
+            multistream_features = (mgc, lf0, vuv)
+        else:
+            raise Exception('Unexpected Error')
+        return multistream_features
 
     def svs(
         self,
@@ -413,8 +503,8 @@ class SimpleEnunu(SPSVS):
         # Run acoustic model and vocoder
         hts_frame_shift = int(self.config.frame_period * 1e4)
         wavs = []
-        self.logger.info(
-            f"Number of segments: {len(duration_modified_labels_segs)}")
+        self.logger.info("Number of segments: %s",
+                         len(duration_modified_labels_segs))
         for duration_modified_labels_seg in tqdm(
             duration_modified_labels_segs,
             desc="[segment]",
@@ -444,6 +534,12 @@ class SimpleEnunu(SPSVS):
                 f0_shift_in_cent=-style_shift * 100,
             )
 
+            # NOTE: ここにピッチ補正のための割り込み処理を追加-----------
+            multistream_features = self.edit_acoustic(
+                multistream_features,
+                feature_type=self.feature_type
+            )
+
             # Generate waveform by vocoder
             wav = self.predict_waveform(
                 multistream_features=multistream_features,
@@ -464,9 +560,11 @@ class SimpleEnunu(SPSVS):
             loudness_norm=loudness_norm,
             target_loudness=target_loudness,
         )
+        # pylint: disable=W1203
         self.logger.info(f"Total time: {time.time() - start_time:.3f} sec")
         RT = (time.time() - start_time) / (len(wav) / self.sample_rate)
         self.logger.info(f"Total real-time factor: {RT:.3f}")
+        # pylint: enable=W1203
         return wav, self.sample_rate
 
 
@@ -475,7 +573,7 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
     UTAUプラグインのファイルから音声を生成する
     """
     # USTの形式のファイルでなければエラー
-    if not path_plugin.endswith('.tmp') or path_plugin.endswith('.ust'):
+    if not (path_plugin.endswith('.tmp') or path_plugin.endswith('.ust')):
         raise ValueError('Input file must be UST or TMP(plugin).')
     # UTAUの一時ファイルに書いてある設定を読み取る
     logging.info('reading settings in TMP')
@@ -542,13 +640,24 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
 
     # モデルを読み取る
     logging.info('Loading models')
-    engine = SimpleEnunu(
-        model_dir, device='cuda' if torch.cuda.is_available() else 'cpu')
-    engine.set_paths(temp_dir=temp_dir, songname=songname)
+    engine = ENUNU(
+        model_dir,
+        device='cuda' if torch.cuda.is_available() else 'cpu')
+    engine.set_paths(temp_dir=temp_dir, songname=songname,
+                     path_feedback=path_plugin)
+
+    # NOTE: 後方互換のため
+    # enuconfigが存在する場合、そこに記載されている拡張機能のパスをconfigに追加する
+    if exists(join(voice_dir, 'enuconfig.yaml')):
+        with open(join(voice_dir, 'enuconfig.yaml'), encoding='utf-8') as f:
+            enuconfig = yaml.safe_load(f)
+        engine.config['extensions'] = enuconfig.get('extensions')
+        del enuconfig
 
     # USTを一時フォルダに複製
     print(f'{datetime.now()} : copying UST')
     shutil.copy2(path_plugin, engine.path_ust)
+    # Tableファイルを一時フォルダに複製
     print(f'{datetime.now()} : copying Table')
     shutil.copy2(find_table(model_dir), engine.path_table)
 
@@ -582,7 +691,7 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
         vocoder_type='auto',
         post_filter_type='gv',
         force_fix_vuv=True,
-        segmented_synthesis=True,
+        segmented_synthesis=True
     )
 
     # wav出力のフォーマットを確認する
