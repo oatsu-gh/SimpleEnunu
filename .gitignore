@@ -6,6 +6,9 @@
 /nnsvs
 /nnsvs-master
 /nnsvs-main
+/SiFiGAN-nnsvs
+/ParallelWaveGAN-nnsvs
+/HN-UnifiedSourceFilterGAN-nnsvs
 
 *.exe
 *.log

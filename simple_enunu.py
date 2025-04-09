@@ -11,6 +11,7 @@ import sys
 import time
 import tkinter
 import warnings
+from argparse import ArgumentParser
 from datetime import datetime
 from glob import glob
 from os import chdir, listdir, makedirs, rename, startfile
@@ -68,6 +69,14 @@ elif exists(join(dirname(__file__), 'nnsvs')):
     sys.path.append(join(dirname(__file__), 'nnsvs'))
 else:
     logging.error('NNSVS directory is not found.')
+
+# NNSVS以外のパッケージ もimportできるようにする
+for local_package in ['HN-UnifiedSourceFilterGAN-nnsvs',
+                     'ParallelWaveGAN-nnsvs', 'SiFiGAN-nnsvs']:
+    if exists(join(dirname(__file__), local_package)):
+        sys.path.append(join(dirname(__file__), local_package))
+    else:
+        logging.error('%s directory is not found.', local_package)
 
 import nnsvs  # pylint: disable=import-error
 from nnsvs.svs import SPSVS
@@ -230,6 +239,8 @@ class ENUNU(SPSVS):
         config = self.config
         # 拡張機能の項目がなければNoneを返す。
         if 'extensions' not in config:
+            return []
+        if config.extensions is None:
             return []
         # 目的の拡張機能のパスがあれば取得する。
         extension_list = config.extensions.get(key)
@@ -568,10 +579,15 @@ class ENUNU(SPSVS):
         return wav, self.sample_rate
 
 
-def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> str:
+def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav: bool = False) -> str:
     """
     UTAUプラグインのファイルから音声を生成する
     """
+    # 引用符を削除
+    path_plugin = path_plugin.strip('"\'')
+    if path_wav is not None:
+        path_wav = path_wav.strip('"\'')
+
     # USTの形式のファイルでなければエラー
     if not (path_plugin.endswith('.tmp') or path_plugin.endswith('.ust')):
         raise ValueError('Input file must be UST or TMP(plugin).')
@@ -724,11 +740,19 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav=True) -> 
 
 if __name__ == '__main__':
     logging.debug('sys.argv: %s', sys.argv)
-    if len(sys.argv) == 3:
-        main(sys.argv[1], sys.argv[2])
-    elif len(sys.argv) == 2:
-        main(sys.argv[1], None)
-    elif len(sys.argv) == 1:
-        main(input('Input file path of TMP(plugin)\n>>> ').strip('"'), None)
+    if len(sys.argv) == 1:
+        # コマンドライン引数が指定されていない場合は、TMPファイルを指定する。
+        main(input('Input file path of TMP(plugin)\n>>> '),
+             path_wav=None, play_wav=True)
     else:
-        raise Exception('引数が多すぎます。/ Too many arguments.')
+        # コマンドライン引数を取得する。
+        parser = ArgumentParser()
+        parser.add_argument('ust', type=str,
+                            help='Input file path (UST or TMP)')
+        parser.add_argument('--wav', type=str, required=False,
+                            help='Output file path (WAV)')
+        parser.add_argument('--play',  action='store_true',
+                            help='Play WAV after rendering or not')
+        args = parser.parse_args()
+        # 実行
+        main(args.ust, path_wav=args.wav, play_wav=args.play)
