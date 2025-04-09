@@ -1,6 +1,18 @@
-omegaconf
+# Can be installed with PIP
+numpy<2
+colored_traceback
+cython
+h5py
+hydra-core
+light-the-torch
+utaupy
+pyworld
 pyyaml
-torch>=1.7.1
-tqdm
-utaupy>=1.18.0
-nnsvs
+nnmnkwii
+
+## Please download from GitHub -----------------
+# nnsvs (https://github.com/nnsvs/nnsvs)
+# uSFGAN (https://github.com/nnsvs/HN-UnifiedSourceFilterGAN)
+# ParallelWaveGAN (https://github.com/nnsvs/ParallelWaveGAN)
+# SiFiGAN (https://github.com/nnsvs/SiFiGAN)
+

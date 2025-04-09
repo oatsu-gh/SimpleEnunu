@@ -15,7 +15,7 @@ from typing import List
 KEEP_LATEST_PACKAGES = ['pip', 'setuptools',
                         'wheel', 'utaupy', 'light-the-torch']
 REMOVE_LIST = ['__pycache__', '.mypy']
-PYTHON_DIR = 'python-3.9.13-embed-amd64'
+PYTHON_DIR = 'python-3.12.10-embed-amd64'
 
 
 def pip_install_upgrade(python_exe: str, packages: List[str]):
@@ -54,7 +54,7 @@ def create_enunu_bat(path_out: str, python_exe: str, version: str):
     """
     s = '@echo off\n\n' +\
         f'echo _____ SimpleEnunu v{version} ________\n' +\
-        f'{python_exe} simple_enunu.py %*\n\nPAUSE\n'
+        f'{python_exe} simple_enunu.py %1 --play\n\nPAUSE\n'
     with open(path_out, 'w', encoding='cp932') as f:
         f.write(s)
 
@@ -133,7 +133,8 @@ def main():
     print()
 
     # NNSVSのフォルダをコピーする
-    shutil.copytree('nnsvs-master', join(enunu_release_dir, 'nnsvs-master'))
+    for package_dir in ['nnsvs-master', 'HN-UnifiedSourceFilterGAN-nnsvs', 'ParallelWaveGAN-nnsvs', 'SiFiGAN-nnsvs']:
+        shutil.copytree(package_dir, join(enunu_release_dir, package_dir))
 
     # Pythonの実行ファイルをコピーする
     print(f'Copying {python_dir} -> {join(enunu_release_dir, python_dir)}')
@@ -142,7 +143,7 @@ def main():
     # なんかいろいろコピーする
     print('Copying scripts')
     shutil.copy2('simple_enunu.py', join(enunu_release_dir))
-    shutil.copy2('reinstall_torch.bat', join(enunu_release_dir))
+    shutil.copy2('repair_packages.bat', join(enunu_release_dir))
     shutil.copytree('enulib', join(enunu_release_dir, 'enulib'))
     shutil.copytree('extensions', join(enunu_release_dir, 'extensions'))
 

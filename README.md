@@ -59,13 +59,13 @@ extensions:
 ## Development environment / 開発環境
 
 - Windows 10
-- Python 3.9
-  - utaupy 1.18.3
-  - numpy 1.23.5
-  - torch  2.0.0+cu118
+- Python 3.12.10
+  - utaupy 1.19.1
+  - numpy 1.26.4
+  - torch   2.4.1+cu118
   - nnsvs (dev)
-  - scikit-learn 1.1.3
-- CUDA 11.7
+  - scikit-learn 1.4.2
+- CUDA 12.6
 
 ## How to use the latest NNSVS (development version) / 同梱NNSVSの更新方法
 
@@ -74,10 +74,35 @@ extensions:
 
 ## 環境構築メモ
 
-- python embeddable に SiFiGAN をインストールするとき、docopt が無いとエラーが出る。インストール版の Python から docopt をコピーして対処。(2024/05/19)
-- python embeddable に tkinter がないのでインストール版の Python から下記内容でコピーして対処。(2024/05/26)
+### python-3.12.7-embed-amd64 での環境構築手順
+
+- pysptk をインストールするときに dll とか h ファイルとかが必要なので、インストール版の Python からコピーする。(2025/04/09)
+
+  - python/include/  → python-embeddable/include/
+  - python/libs/  → python-embeddable/libs/
+
+- pysptk をインストールするときと uSFGAN を使うときに tcl/tk が必要なので、インストール版の Python から下記内容でコピーして対処。(2025/04/09)
+
   - python/tcl/  → python-embeddable/tcl/
   - python/Lib/tkinter/ → python/tkinter/
   - python/DLLs/\_tkinter.pyd → python-embeddable/\_tkinter.pyd 
-  - python/DLLs/tcl86t.pyd → python-embeddable/tcl86t.pyd 
-  - python/DLLs/tk86t.pyd → python-embeddable/tk86t.pyd 
+  - python/DLLs/tcl86t.dll → python-embeddable/tcl86t.dll
+  - python/DLLs/tk86t.dll→ python-embeddable/tk86t.dll 
+  - python/DLLs/zlib1.dll → python-embeddable/zlib1.dll
+
+- ```python
+  python-3.12.10-embed-amd64\get-pip.py --no-warn-script-location
+  python-3.12.10-embed-amd64\python.exe -m pip install -r requirements.txt --no-warn-script-location
+  python-3.12.10-embed-amd64\python.exe -m pip install nnsvs
+  python-3.12.10-embed-amd64\python.exe -m pip uninstall nnsvs torch torchaudio torchvision -y
+  ```
+
+- nnsvs をダウンロード (https://github.com/nnsvs/nnsvs)
+
+- uSFGAN は HN-UnifiedSourceFilterGAN-nnsvs を DL
+
+- ParallelWaveGAN は ParallelWaveGAN-nnsvs をDL (https://github.com/nnsvs/ParallelWaveGAN)
+
+- SiFiGAN は SiFiGAN-nnsvs を DL (https://github.com/nnsvs/SiFiGAN)
+
+  - pip で python embeddable に SiFiGAN をインストールする場合は docopt が無いとエラーが出るので、インストール版の Python から docopt をコピーして対処。(2024/05/19)
