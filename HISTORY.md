@@ -95,6 +95,8 @@ extensions:
 
 - 同梱のpython を 3.12.10 に更新。
 
+- 拡張機能 (extensions) を使用しないモデルが動作しない不具合を修正。
+
 - repair_packages.bat を追加。torch と utaupy をユーザー側でアップグレードできる。
 
 - 実行時のコマンドライン引数の取り扱いを変更
