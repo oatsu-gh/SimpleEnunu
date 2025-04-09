@@ -104,7 +104,5 @@ extensions:
   - オプション `--play` (任意): 実行引数に含まれると TRUE として扱われて WAV合成後に再生 する。なければFALSE。
 
   ```cmd
-  python.exe simple_enunu.py simple_enunu.py [-h] [--wav WAV] [--play] ust
+  python.exe simple_enunu.py [-h] [--wav WAV] [--play] ust
   ```
-
-  
