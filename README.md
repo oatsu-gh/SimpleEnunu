@@ -7,7 +7,7 @@ Another ENUNU for enthusiasts and developers, easy to catch up with NNSVS.
 
 ## How to install / インストール方法
 
-UTAU を起動し、**SimpleEnunu-{version}.zip** をUTAUのウィンドウにドラッグアンドドロップしてください。 
+UTAU を起動し、**SimpleEnunu-{version}.zip** をUTAUのウィンドウにドラッグアンドドロップしてください。
 
 Launch UTAU and D&D SimpleEnunu-{version}.zip into the window.
 
@@ -52,17 +52,20 @@ extensions:
 
 - timing_repairer (timing_editor)
   - ラベル内の音素の発声時間に不具合がある場合に自動修正を試みます。
+- vibrato_applier (ust_editor, acoustic_editor)
+  - USTのビブラートを f0 に反映します。
+
 - velocity_applier (timing_editor)
   - USTの子音速度をもとに子音の長さを調節します。
 
 
 ## Development environment / 開発環境
 
-- Windows 10
+- Windows 11
 - Python 3.12.10
   - utaupy 1.19.1
   - numpy 1.26.4
-  - torch   2.4.1+cu118
+  - torch 2.4.1+cu118
   - nnsvs (dev)
   - scikit-learn 1.4.2
 - CUDA 12.6
@@ -74,7 +77,7 @@ extensions:
 
 ## 環境構築メモ
 
-### python-3.12.7-embed-amd64 での環境構築手順
+### python-3.12.10-embed-amd64 での環境構築手順
 
 - pysptk をインストールするときに dll とか h ファイルとかが必要なので、インストール版の Python からコピーする。(2025/04/09)
 
@@ -85,9 +88,9 @@ extensions:
 
   - python/tcl/  → python-embeddable/tcl/
   - python/Lib/tkinter/ → python/tkinter/
-  - python/DLLs/\_tkinter.pyd → python-embeddable/\_tkinter.pyd 
+  - python/DLLs/\_tkinter.pyd → python-embeddable/\_tkinter.pyd
   - python/DLLs/tcl86t.dll → python-embeddable/tcl86t.dll
-  - python/DLLs/tk86t.dll→ python-embeddable/tk86t.dll 
+  - python/DLLs/tk86t.dll→ python-embeddable/tk86t.dll
   - python/DLLs/zlib1.dll → python-embeddable/zlib1.dll
 
 - ```python

@@ -94,13 +94,9 @@ extensions:
 ## v0.5.0
 
 - 同梱のpython を 3.12.10 に更新。
-
 - 拡張機能 (extensions) を使用しないモデルが動作しない不具合を修正。
-
 - repair_packages.bat を追加。torch と utaupy をユーザー側でアップグレードできる。
-
 - 実行時のコマンドライン引数の取り扱いを変更
-
   - 第1引数 `ust` (必須): 入力ファイルのパス。USTまたはTMPファイル。
   - オプション引数 (任意) `--wav`: WAV出力パス。指定なしの場合は NULL として扱ってレンダリング後に「名前を付けて保存」する。
   - オプション `--play` (任意): 実行引数に含まれると TRUE として扱われて WAV合成後に再生 する。なければFALSE。
@@ -108,3 +104,17 @@ extensions:
   ```cmd
   python.exe simple_enunu.py [-h] [--wav WAV] [--play] ust
   ```
+
+## v0.6.0
+
+- 同梱の utaupy を 1.21.0 に更新。
+- 拡張機能 (vibrarto_applier.py) を追加。UST のビブラートを f0 に反映できます。
+
+```yaml
+# 拡張機能の設定例
+extensions:
+  ust_editor:
+    - "%e/extensions/vibrato_applier.py"
+  acoustic_editor:
+    - "%e/extensions/vibrato_applier.py"
+```
