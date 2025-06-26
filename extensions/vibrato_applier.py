@@ -255,14 +255,7 @@ def main(path_f0_in: str, path_f0_out: str, path_ust: str):
         # f0 と Δf0_cent を読み取ってf0ファイルを加工する
         result = apply_vibrato_to_f0(
             path_f0_in, path_f0_out, path_delta_f0_cent)
-    # baselineを matplib でプロットする
-    import matplotlib.pyplot as plt
-    plt.plot(result)
-    plt.title('Vibrato Shapes')
-    plt.xlabel('Time [ms]')
-    plt.ylabel('Pitch [cent]')
-    plt.grid()
-    plt.show()
+    return result
 
 
 def test():
