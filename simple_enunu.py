@@ -38,6 +38,7 @@ logging.basicConfig(stream=sys.stdout,
                     level=logging.INFO)
 logging.getLogger('simple_enunu')
 
+SEGMENTED_SYNTHESIS = True
 
 # pylint: disable=C0411
 # pylint: disable=C0413
@@ -707,7 +708,7 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav: bool = F
         vocoder_type='auto',
         post_filter_type='gv',
         force_fix_vuv=True,
-        segmented_synthesis=True
+        segmented_synthesis=SEGMENTED_SYNTHESIS,
     )
 
     # wav出力のフォーマットを確認する
