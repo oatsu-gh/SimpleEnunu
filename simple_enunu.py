@@ -1,94 +1,101 @@
 #! /usr/bin/env python3
-# coding: utf-8
-# Copyright (c) 2023-2024 oatsu
+# Copyright (c) 2023-2025 oatsu
 """
 1. UTAUプラグインのテキストファイルを読み取る。
 2. LABファイル→WAVファイル
 """
+
+import colored_traceback.auto  # noqa: F401
+
+from importlib.util import find_spec
 import logging
 import shutil
 import sys
 import time
 import tkinter
-import warnings
 from argparse import ArgumentParser
 from datetime import datetime
 from glob import glob
 from os import chdir, listdir, makedirs, rename, startfile
-from os.path import (abspath, basename, dirname, exists, expanduser, join,
-                     relpath, splitext)
+from os.path import (
+    abspath,
+    basename,
+    dirname,
+    exists,
+    expanduser,
+    join,
+    relpath,
+    splitext,
+)
 from shutil import move
 from tempfile import TemporaryDirectory, mkdtemp
 from tkinter.filedialog import asksaveasfilename
-from typing import Iterable, List, Union
-
-import colored_traceback.always  # pylint: disable=unused-import
+from typing import Union
+from collections.abc import Iterable
 import numpy as np
 import utaupy
 import yaml
 from nnmnkwii.io import hts
 from scipy.io import wavfile
 
+# import warnings
+import enulib
+
 # scikit-learn で警告が出るのを無視
-warnings.simplefilter('ignore')
+# warnings.simplefilter("ignore")
 
 # my_package.my_moduleのみに絞ってsys.stderrにlogを出す
-logging.basicConfig(stream=sys.stdout,
-                    format="%(asctime)s [%(levelname)s] %(message)s",
-                    level=logging.INFO)
-logging.getLogger('simple_enunu')
+logging.basicConfig(
+    stream=sys.stdout,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    level=logging.INFO,
+)
+logger = logging.getLogger('simple_enunu')
+
 
 SEGMENTED_SYNTHESIS = True
 
-# pylint: disable=C0411
-# pylint: disable=C0413
-# autopep8: off
-# ------------------------------------------------
-# ENUNUのフォルダ直下にあるフォルダやファイルをimportできるようにする
-sys.path.append(dirname(__file__))
-import enulib
-
-try:
-    import torch
-except ModuleNotFoundError:
+# torch をimportする。インストールされていない場合は新規インストールする ------
+if find_spec('torch') is None:
     print('----------------------------------------------------------')
     print('初回起動ですね。')
     print('PC環境に合わせてPyTorchを自動インストールします。')
     print('インストール完了までしばらくお待ちください。')
     print('----------------------------------------------------------')
-    enulib.install_torch.ltt_install_torch(sys.executable)
-    # enulib.install_torch.pip_install_torch(abspath(sys.executable))
+    enulib.install_torch.ltt_install_torch()
     print('----------------------------------------------------------')
     print('インストール成功しました。')
     print('----------------------------------------------------------\n')
-    import torch
+import torch  # noqa: E402
 
-# NNSVSをimportできるようにする
-if exists(join(dirname(__file__), 'nnsvs-master')):
-    sys.path.append(join(dirname(__file__), 'nnsvs-master'))
-elif exists(join(dirname(__file__), 'nnsvs')):
-    sys.path.append(join(dirname(__file__), 'nnsvs'))
-else:
-    logging.error('NNSVS directory is not found.')
+# nnsvs などのモジュールを import できるか確認する --------------------------
+_special_packages = {
+    'nnsvs': ['https://github.com/oatsu-gh/nnsvs', 'https://github.com/nnsvs/nnsvs'],
+    'usfgan': [
+        'https://github.com/oatsu-gh/HN-UnifiedSourceFilterGAN',
+        'https://github.com/nnsvs/HN-UnifiedSourceFilterGAN',
+    ],
+    'parallel_wavegan': [
+        'https://github.com/oatsu-gh/ParallelWaveGAN',
+        'https://github.com/nnsvs/ParallelWaveGAN',
+    ],
+    'sifigan': ['https://github.com/nnsvs/SiFiGAN'],
+}
 
-# NNSVS以外のパッケージ もimportできるようにする
-for local_package in ['HN-UnifiedSourceFilterGAN-nnsvs',
-                     'ParallelWaveGAN-nnsvs', 'SiFiGAN-nnsvs']:
-    if exists(join(dirname(__file__), local_package)):
-        sys.path.append(join(dirname(__file__), local_package))
-    else:
-        logging.error('%s directory is not found.', local_package)
+for pkg_name, pkg_url in _special_packages.items():
+    _error_msg = (
+        f'Pakcage "{pkg_name}" is not installed. This package can be installed from {pkg_url}.'
+    )
+    if find_spec(pkg_name) is None:
+        raise ModuleNotFoundError(_error_msg)
 
-import nnsvs  # pylint: disable=import-error
-from nnsvs.svs import SPSVS
-from utils import enunu2nnsvs  # pylint: disable=import-error
+# nnsvs 関連を import する ---------------------------------------------------
+import nnsvs  # noqa: E402
+from nnsvs.svs import SPSVS  # noqa: E402
 
-logging.debug('Imported NNSVS module: %s', nnsvs)
+from enulib import enunu2nnsvs  # noqa: E402
 
-# ------------------------------------------------
-# pylint: enable=C0411
-# pylint: enable=C0413
-# autopep8: on
+logger.debug('Imported NNSVS module: %s', nnsvs)
 
 
 def get_project_path(path_utauplugin):
@@ -125,8 +132,7 @@ def estimate_bit_depth(wav: np.ndarray) -> str:
 
 
 def wrapped_enunu2nnsvs(voice_dir, out_dir):
-    """ENUNU用のディレクトリ構造のモデルをNNSVS用に再構築する。
-    """
+    """ENUNU用のディレクトリ構造のモデルをNNSVS用に再構築する。"""
     # torch.save() の出力パスに日本語が含まれているとセーブできないので、一時フォルダを作ってそこに保存してから移動する。
     with TemporaryDirectory(prefix='.temp-enunu2nnsvs-', dir='.') as temp_dir:
         enunu2nnsvs.main(voice_dir, relpath(temp_dir))
@@ -136,7 +142,8 @@ def wrapped_enunu2nnsvs(voice_dir, out_dir):
         enuconfig = yaml.safe_load(f)
     rename(
         join(out_dir, 'kana2phonemes.table'),
-        join(out_dir, basename(enuconfig['table_path'])))
+        join(out_dir, basename(enuconfig['table_path'])),
+    )
 
 
 def packed_model_exists(voice_dir: str) -> bool:
@@ -152,14 +159,13 @@ def packed_model_exists(voice_dir: str) -> bool:
 
 
 def find_table(model_dir: str) -> str:
-    """ 歌詞→音素の変換テーブルを探す
-    """
+    """歌詞→音素の変換テーブルを探す"""
     table_files = glob(join(model_dir, '*.table'))
     if len(table_files) == 0:
         raise FileNotFoundError(f'Table file does not exist in {model_dir}.')
-    elif len(table_files) > 1:
-        logging.warning('Multiple table files are found. : %s', table_files)
-    logging.info('Using %s', basename(table_files[0]))
+    if len(table_files) > 1:
+        logger.warning('Multiple table files are found. : %s', table_files)
+    logger.info('Using %s', basename(table_files[0]))
     return table_files[0]
 
 
@@ -180,11 +186,10 @@ def adjust_wav_gain_for_float32(wav: np.ndarray):
     if max_gain > 8388608:
         return wav / 2147483647
     # int16 -> float
-    elif max_gain > 8:
+    if max_gain > 8:
         return wav / 32767
     # float
-    else:
-        return wav
+    return wav
 
 
 class ENUNU(SPSVS):
@@ -195,11 +200,21 @@ class ENUNU(SPSVS):
         device (str): 'cuda' or 'cpu'
     """
 
-    def __init__(self,
-                 model_dir: str,
-                 device='cuda' if torch.cuda.is_available() else 'cpu',
-                 verbose=0,
-                 **kwargs):
+    def __init__(
+        self,
+        model_dir: str,
+        device=None,
+        verbose=0,
+        **kwargs,
+    ):
+        # automatic device select
+        if device is None:
+            device = (
+                torch.accelerator.current_accelerator()
+                if torch.accelerator.is_available()
+                else torch.device('cpu')
+            )
+        # initialize
         super().__init__(model_dir, device=device, verbose=verbose, **kwargs)
         # self.voice_dir = None
         # self.path_plugin = None
@@ -217,8 +232,7 @@ class ENUNU(SPSVS):
         # self.path_wav = None
 
     def set_paths(self, temp_dir, songname, path_feedback=None):
-        """ファイル入出力のPATHを設定する
-        """
+        """ファイル入出力のPATHを設定する"""
         self.path_ust = join(temp_dir, f'{songname}_temp.ust')
         self.path_table = join(temp_dir, f'{songname}_temp.table')
         self.path_full_score = join(temp_dir, f'{songname}_score.full')
@@ -232,7 +246,7 @@ class ENUNU(SPSVS):
         if path_feedback is not None:
             self.path_feedback = path_feedback
 
-    def get_extension_path_list(self, key) -> List[str]:
+    def get_extension_path_list(self, key) -> list[str]:
         """
         拡張機能のパスのリストを取得する。
         パスが複数指定されていてもひとつしか指定されていなくてもループできるように、リストを返す。
@@ -247,7 +261,7 @@ class ENUNU(SPSVS):
         extension_list = config.extensions.get(key)
         if extension_list is None:
             return []
-        if extension_list == "":
+        if extension_list == '':
             return []
         if isinstance(extension_list, str):
             return [extension_list]
@@ -279,7 +293,7 @@ class ENUNU(SPSVS):
                 path_extension,
                 ust=self.path_ust,
                 table=self.path_table,
-                feedback=self.path_feedback
+                feedback=self.path_feedback,
             )
         # 編集後のustファイルを読み取る
         ust = utaupy.ust.load(self.path_ust)
@@ -302,7 +316,7 @@ class ENUNU(SPSVS):
                 ust=self.path_ust,
                 table=self.path_table,
                 feedback=self.path_feedback,
-                full_score=self.path_full_score
+                full_score=self.path_full_score,
             )
         score_labels = hts.load(self.path_full_score).round_()
         return score_labels
@@ -331,7 +345,7 @@ class ENUNU(SPSVS):
                 full_score=self.path_full_score,
                 mono_score=self.path_mono_score,
                 full_timing=self.path_full_timing,
-                mono_timing=self.path_mono_timing
+                mono_timing=self.path_mono_timing,
             )
             # 変更後のモノラベルを読む
             with open(self.path_mono_timing, encoding='utf-8') as f:
@@ -341,10 +355,12 @@ class ENUNU(SPSVS):
             # NOTE: 歌詞は編集していないという前提で処理する。
             if enulib.extensions.str_has_been_changed(str_mono_old, str_mono_new):
                 enulib.extensions.merge_mono_time_change_to_full(
-                    self.path_mono_timing, self.path_full_timing)
+                    self.path_mono_timing, self.path_full_timing
+                )
             else:
                 enulib.extensions.merge_full_time_change_to_mono(
-                    self.path_full_timing, self.path_mono_timing)
+                    self.path_full_timing, self.path_mono_timing
+                )
 
         # 編集後のfull_timing を読み取る
         duration_modified_labels = hts.load(self.path_full_timing).round_()
@@ -364,7 +380,8 @@ class ENUNU(SPSVS):
         if feature_type not in ['world', 'melf0']:
             self.logger.warning(
                 'Unknown feature_type "%s" is selected. Skipping acoustic editor.',
-                feature_type)
+                feature_type,
+            )
             return multistream_features
 
         # ツールが指定されている場合はCSV書き出し
@@ -372,18 +389,18 @@ class ENUNU(SPSVS):
             assert len(multistream_features) == 4
             mgc, lf0, vuv, bap = multistream_features
             f0 = np.exp(lf0)
-            np.savetxt(self.path_mgc, mgc, fmt="%.16f", delimiter=",")
-            np.savetxt(self.path_f0, f0, fmt="%.16f", delimiter=",")
-            np.savetxt(self.path_vuv, vuv, fmt="%.16f", delimiter=",")
-            np.savetxt(self.path_bap, bap, fmt="%.16f", delimiter=",")
+            np.savetxt(self.path_mgc, mgc, fmt='%.16f', delimiter=',')
+            np.savetxt(self.path_f0, f0, fmt='%.16f', delimiter=',')
+            np.savetxt(self.path_vuv, vuv, fmt='%.16f', delimiter=',')
+            np.savetxt(self.path_bap, bap, fmt='%.16f', delimiter=',')
         elif feature_type == 'melf0':
             assert len(multistream_features) == 3
             mgc, lf0, vuv = multistream_features
             f0 = np.exp(lf0)
             # CSV書き出し
-            np.savetxt(self.path_mgc, mgc, fmt="%.16f", delimiter=",")
-            np.savetxt(self.path_f0, f0, fmt="%.16f", delimiter=",")
-            np.savetxt(self.path_vuv, vuv, fmt="%.16f", delimiter=",")
+            np.savetxt(self.path_mgc, mgc, fmt='%.16f', delimiter=',')
+            np.savetxt(self.path_f0, f0, fmt='%.16f', delimiter=',')
+            np.savetxt(self.path_vuv, vuv, fmt='%.16f', delimiter=',')
 
         # 複数ツールのすべてについて処理実施する
         for path_extension in extension_list:
@@ -400,26 +417,22 @@ class ENUNU(SPSVS):
                 mgc=self.path_mgc,
                 f0=self.path_f0,
                 vuv=self.path_vuv,
-                bap=self.path_bap
+                bap=self.path_bap,
             )
 
         # 編集が終わったらCSV読み取り
         if feature_type == 'world':
             mgc = np.loadtxt(self.path_mgc, delimiter=',', dtype=np.float64)
-            lf0 = np.log(np.loadtxt(self.path_f0, delimiter=',', dtype=np.float64)
-                         ).reshape(-1, 1)
-            vuv = np.loadtxt(self.path_vuv, delimiter=',',
-                             dtype=np.float64).reshape(-1, 1)
+            lf0 = np.log(np.loadtxt(self.path_f0, delimiter=',', dtype=np.float64)).reshape(-1, 1)
+            vuv = np.loadtxt(self.path_vuv, delimiter=',', dtype=np.float64).reshape(-1, 1)
             bap = np.loadtxt(self.path_bap, delimiter=',', dtype=np.float64)
             # 統合
             multistream_features = (mgc, lf0, vuv, bap)
         elif feature_type == 'melf0':
             # 編集が終わったらCSV読み取り
             mgc = np.loadtxt(self.path_mgc, delimiter=',', dtype=np.float64)
-            lf0 = np.log(np.loadtxt(self.path_f0, delimiter=',', dtype=np.float64)
-                         ).reshape(-1, 1)
-            vuv = np.loadtxt(self.path_vuv, delimiter=',', dtype=np.float64
-                             ).reshape(-1, 1)
+            lf0 = np.log(np.loadtxt(self.path_f0, delimiter=',', dtype=np.float64)).reshape(-1, 1)
+            vuv = np.loadtxt(self.path_vuv, delimiter=',', dtype=np.float64).reshape(-1, 1)
             # 統合
             multistream_features = (mgc, lf0, vuv)
         else:
@@ -443,7 +456,7 @@ class ENUNU(SPSVS):
         loudness_norm=False,
         target_loudness=-20,
         segmented_synthesis=False,
-        **kwargs
+        **kwargs,
     ):
         """Synthesize waveform from HTS labels.
         Args:
@@ -468,10 +481,10 @@ class ENUNU(SPSVS):
         """
         start_time = time.time()
         vocoder_type = vocoder_type.lower()
-        if vocoder_type not in ["world", "pwg", "usfgan", "auto"]:
-            raise ValueError(f"Unknown vocoder type: {vocoder_type}")
-        if post_filter_type not in ["merlin", "nnsvs", "gv", "none"]:
-            raise ValueError(f"Unknown post-filter type: {post_filter_type}")
+        if vocoder_type not in ['world', 'pwg', 'usfgan', 'auto']:
+            raise ValueError(f'Unknown vocoder type: {vocoder_type}')
+        if post_filter_type not in ['merlin', 'nnsvs', 'gv', 'none']:
+            raise ValueError(f'Unknown post-filter type: {post_filter_type}')
 
         # Predict timinigs
         duration_modified_labels = self.predict_timing(labels)
@@ -493,9 +506,7 @@ class ENUNU(SPSVS):
         # NOTE: segmented synthesis is not well tested. There MUST be better ways
         # to do this.
         if segmented_synthesis:
-            self.logger.warning(
-                "Segmented synthesis is not well tested. Use it on your own risk."
-            )
+            self.logger.warning('Segmented synthesis is not well tested. Use it on your own risk.')
             # NOTE: ここsegment_labels が nnsvs の中の関数にあるので呼び出せるように改造済み
             duration_modified_labels_segs = nnsvs.io.hts.segment_labels(
                 duration_modified_labels,
@@ -515,11 +526,10 @@ class ENUNU(SPSVS):
         # Run acoustic model and vocoder
         hts_frame_shift = int(self.config.frame_period * 1e4)
         wavs = []
-        self.logger.info("Number of segments: %s",
-                         len(duration_modified_labels_segs))
+        self.logger.info('Number of segments: %s', len(duration_modified_labels_segs))
         for duration_modified_labels_seg in tqdm(
             duration_modified_labels_segs,
-            desc="[segment]",
+            desc='[segment]',
             total=len(duration_modified_labels_segs),
         ):
             duration_modified_labels_seg.frame_shift = hts_frame_shift
@@ -548,8 +558,7 @@ class ENUNU(SPSVS):
 
             # NOTE: ここにピッチ補正のための割り込み処理を追加-----------
             multistream_features = self.edit_acoustic(
-                multistream_features,
-                feature_type=self.feature_type
+                multistream_features, feature_type=self.feature_type
             )
 
             # Generate waveform by vocoder
@@ -573,9 +582,9 @@ class ENUNU(SPSVS):
             target_loudness=target_loudness,
         )
         # pylint: disable=W1203
-        self.logger.info(f"Total time: {time.time() - start_time:.3f} sec")
+        self.logger.info(f'Total time: {time.time() - start_time:.3f} sec')
         RT = (time.time() - start_time) / (len(wav) / self.sample_rate)
-        self.logger.info(f"Total real-time factor: {RT:.3f}")
+        self.logger.info(f'Total real-time factor: {RT:.3f}')
         # pylint: enable=W1203
         return wav, self.sample_rate
 
@@ -629,14 +638,11 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav: bool = F
     # ENUNU 用ではない通常のNNSVSモデルの場合
     elif packed_model_exists(voice_dir):
         model_dir = voice_dir
-        logging.warning(
-            'NNSVS model is selected. This model might be not ready for ENUNU.')
+        logging.warning('NNSVS model is selected. This model might be not ready for ENUNU.')
 
     # ENUNU<1.0.0 向けの構成のモデルな場合
     elif exists(join(voice_dir, 'enuconfig.yaml')):
-        logging.info(
-            'Regacy ENUNU model is selected. Converting it for the compatibility...'
-        )
+        logging.info('Regacy ENUNU model is selected. Converting it for the compatibility...')
         model_dir = join(voice_dir, 'model')
         makedirs(model_dir, exist_ok=True)
         print('----------------------------------------------')
@@ -657,11 +663,8 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav: bool = F
 
     # モデルを読み取る
     logging.info('Loading models')
-    engine = ENUNU(
-        model_dir,
-        device='cuda' if torch.cuda.is_available() else 'cpu')
-    engine.set_paths(temp_dir=temp_dir, songname=songname,
-                     path_feedback=path_plugin)
+    engine = ENUNU(model_dir)
+    engine.set_paths(temp_dir=temp_dir, songname=songname, path_feedback=path_plugin)
 
     # NOTE: 後方互換のため
     # enuconfigが存在する場合、そこに記載されている拡張機能のパスをconfigに追加する
@@ -689,7 +692,7 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav: bool = F
         engine.path_ust,
         engine.path_table,
         engine.path_full_score,
-        strict_sinsy_style=False
+        strict_sinsy_style=False,
     )
 
     # フルラベルファイルを読み取る
@@ -716,7 +719,9 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav: bool = F
 
     # WAV出力先が未定の場合
     if path_wav is None:
-        print('表示されているエクスプローラーの画面から、WAVファイルに名前を付けて保存してください。')
+        print(
+            '表示されているエクスプローラーの画面から、WAVファイルに名前を付けて保存してください。'
+        )
         if out_dir is not None:
             initialdir = out_dir
         else:
@@ -726,7 +731,8 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav: bool = F
             initialdir=initialdir,
             initialfile=f'{songname}.wav',
             filetypes=[('Wave sound file', '.wav'), ('All files', '*')],
-            defaultextension='.wav')
+            defaultextension='.wav',
+        )
     assert path_wav != '', 'ファイル名が入力されていません'
 
     # wav出力
@@ -734,7 +740,7 @@ def main(path_plugin: str, path_wav: Union[str, None] = None, play_wav: bool = F
 
     # 音声を再生する。
     if exists(path_wav) and play_wav is True:
-        startfile(path_wav)
+        startfile(path_wav)  # noqa: S606
 
     return path_wav
 
@@ -743,17 +749,13 @@ if __name__ == '__main__':
     logging.debug('sys.argv: %s', sys.argv)
     if len(sys.argv) == 1:
         # コマンドライン引数が指定されていない場合は、TMPファイルを指定する。
-        main(input('Input file path of TMP(plugin)\n>>> '),
-             path_wav=None, play_wav=True)
+        main(input('Input file path of TMP(plugin)\n>>> '), path_wav=None, play_wav=True)
     else:
         # コマンドライン引数を取得する。
         parser = ArgumentParser()
-        parser.add_argument('ust', type=str,
-                            help='Input file path (UST or TMP)')
-        parser.add_argument('--wav', type=str, required=False,
-                            help='Output file path (WAV)')
-        parser.add_argument('--play',  action='store_true',
-                            help='Play WAV after rendering or not')
+        parser.add_argument('ust', type=str, help='Input file path (UST or TMP)')
+        parser.add_argument('--wav', type=str, required=False, help='Output file path (WAV)')
+        parser.add_argument('--play', action='store_true', help='Play WAV after rendering or not')
         args = parser.parse_args()
         # 実行
         main(args.ust, path_wav=args.wav, play_wav=args.play)
