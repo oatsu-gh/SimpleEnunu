@@ -1,4 +1,4 @@
-# Can be installed with PIP
+# Install from PyPI
 numpy<2
 colored_traceback
 cython
@@ -8,11 +8,11 @@ light-the-torch
 utaupy
 pyworld
 pyyaml
-nnmnkwii
+tqdm
 
-## Please download from GitHub -----------------
-# nnsvs (https://github.com/nnsvs/nnsvs)
-# uSFGAN (https://github.com/nnsvs/HN-UnifiedSourceFilterGAN)
-# ParallelWaveGAN (https://github.com/nnsvs/ParallelWaveGAN)
-# SiFiGAN (https://github.com/nnsvs/SiFiGAN)
-
+# Install from GitHub -----------------
+git+https://github.com/oatsu-gh/nnmnkwii@enunu-python12
+git+https://github.com/oatsu-gh/nnsvs@enunu-python12
+git+https://github.com/oatsu-gh/HN-UnifiedSourceFilterGAN@enunu-python12
+git+https://github.com/oatsu-gh//ParallelWaveGAN@enunu-python12
+git+https://github.com/nnsvs/SiFiGAN
