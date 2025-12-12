@@ -2,7 +2,6 @@
 /venv
 /test
 /server_start.ps1
-/pyproject.toml
 /nnsvs
 /nnsvs-master
 /nnsvs-main
