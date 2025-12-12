@@ -70,7 +70,10 @@ import torch  # noqa: E402
 
 # nnsvs などのモジュールを import できるか確認する --------------------------
 _special_packages = {
-    'nnsvs': ['https://github.com/oatsu-gh/nnsvs', 'https://github.com/nnsvs/nnsvs'],
+    'nnsvs': [
+        'https://github.com/oatsu-gh/nnsvs',
+        'https://github.com/nnsvs/nnsvs',
+    ],
     'usfgan': [
         'https://github.com/oatsu-gh/HN-UnifiedSourceFilterGAN',
         'https://github.com/nnsvs/HN-UnifiedSourceFilterGAN',
@@ -79,15 +82,15 @@ _special_packages = {
         'https://github.com/oatsu-gh/ParallelWaveGAN',
         'https://github.com/nnsvs/ParallelWaveGAN',
     ],
-    'sifigan': ['https://github.com/nnsvs/SiFiGAN'],
+    'sifigan': [
+        'https://github.com/nnsvs/SiFiGAN',
+    ],
 }
 
 for pkg_name, pkg_url in _special_packages.items():
-    _error_msg = (
-        f'Pakcage "{pkg_name}" is not installed. This package can be installed from {pkg_url}.'
-    )
     if find_spec(pkg_name) is None:
-        raise ModuleNotFoundError(_error_msg)
+        msg = f'Pakcage "{pkg_name}" is not installed. Please install it from {pkg_url}.'
+        raise ModuleNotFoundError(msg)
 
 # nnsvs 関連を import する ---------------------------------------------------
 import nnsvs  # noqa: E402
