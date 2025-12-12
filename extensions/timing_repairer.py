@@ -21,14 +21,14 @@ def repair_label(path_label, time_unit=50000):
     label.write(path_label)
 
 
-if __name__ == "__main__":
-    print("timing_repairer.py------------------------------------")
+if __name__ == '__main__':
+    print('timing_repairer.py------------------------------------')
     parser = ArgumentParser()
     parser.add_argument(
-        "--mono_timing", help="発声タイミングの情報を持ったHTSフルラベルファイルのパス"
+        '--mono_timing', help='発声タイミングの情報を持ったHTSフルラベルファイルのパス'
     )
     # 使わない引数は無視
     args, _ = parser.parse_known_args()
     # 実行引数を渡して処理
     repair_label(path_label=args.mono_timing)
-    print("-------------------------------------------------------")
+    print('-------------------------------------------------------')
